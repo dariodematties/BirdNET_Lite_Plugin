@@ -10,7 +10,10 @@ except:
 
 import argparse
 import operator
-import librosa
+# import librosa
+from scipy.io import wavfile
+from scipy import interpolate
+
 import numpy as np
 import math
 import time
@@ -39,7 +42,7 @@ def loadModel():
 
     # Load labels
     CLASSES = []
-    with open('model/labels.txt', 'r') as lfile:
+    with open('model/labels.txt', 'r', encoding="utf-8") as lfile:
         for line in lfile.readlines():
             CLASSES.append(line.replace('\n', ''))
 
@@ -83,7 +86,23 @@ def readAudioData(path, overlap, sample_rate=48000):
     print('READING AUDIO DATA...', end=' ', flush=True)
 
     # Open file with librosa (uses ffmpeg or libav)
-    sig, rate = librosa.load(path, sr=sample_rate, mono=True, res_type='kaiser_fast')
+    # sig, rate = librosa.load(path, sr=sample_rate, mono=True, res_type='kaiser_fast')
+    old_rate, old_sig = wavfile.read(path)
+    old_sig = old_sig[:,0]
+    if old_rate != sample_rate:
+        duration = old_sig.shape[0] / old_rate
+        
+        time_old  = np.linspace(0, duration, old_sig.shape[0])
+        time_new  = np.linspace(0, duration, int(old_sig.shape[0] * sample_rate / old_rate))
+        
+        interpolator = interpolate.interp1d(time_old, old_sig.T)
+        sig = interpolator(time_new).T
+        sig = np.round(sig).astype(old_sig.dtype)
+    else:
+        sig = old_sig
+
+    rate = sample_rate
+
 
     # Split audio into 3-second chunks
     chunks = splitSignal(sig, rate, overlap)
