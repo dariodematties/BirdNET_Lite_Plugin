@@ -18,6 +18,9 @@ import numpy as np
 import math
 import time
 
+from waggle.plugin import Plugin
+from waggle.data.audio import Microphone
+
 def loadModel():
 
     global INPUT_LAYER_INDEX
@@ -216,27 +219,36 @@ def main():
 
     args = parser.parse_args()
 
-    # Load model
-    interpreter = loadModel()
+    with Plugin() as plugin, Microphone() as microphone:
+        with Plugin.timeit("plugin.duration.loadmodel"):
+            # Load model
+            interpreter = loadModel()
 
-    # Load custom species list
-    if not args.custom_list == '':
-        WHITE_LIST = loadCustomSpeciesList(args.custom_list)
-    else:
-        WHITE_LIST = []
+            # Load custom species list
+            if not args.custom_list == '':
+                WHITE_LIST = loadCustomSpeciesList(args.custom_list)
+            else:
+                WHITE_LIST = []
 
+        with Plugin.timeit("plugin.duration.input"):
+            # Read audio data
+            # audioData = readAudioData(args.i, args.overlap)
+            sample = microphone.record(5)
 
-    # Read audio data
-    audioData = readAudioData(args.i, args.overlap)
+        with Plugin.timeit("plugin.duration.inference"):
+            # Process audio data and get detections
+            week = max(1, min(args.week, 48))
+            sensitivity = max(0.5, min(1.0 - (args.sensitivity - 1.0), 1.5))
+            detections = analyzeAudioData(sample.data, args.lat, args.lon, week, sensitivity, args.overlap, interpreter)
 
-    # Process audio data and get detections
-    week = max(1, min(args.week, 48))
-    sensitivity = max(0.5, min(1.0 - (args.sensitivity - 1.0), 1.5))
-    detections = analyzeAudioData(audioData, args.lat, args.lon, week, sensitivity, args.overlap, interpreter)
-
-    # Write detections to output file
-    min_conf = max(0.01, min(args.min_conf, 0.99))
-    writeResultsToFile(detections, min_conf, args.o)
+        # Write detections to output file
+        min_conf = max(0.01, min(args.min_conf, 0.99))
+        # writeResultsToFile(detections, min_conf, args.o)
+        for d in detections:
+            for entry in detections[d]:
+                if entry[1] >= min_conf and (entry[0] in WHITE_LIST or len(WHITE_LIST) == 0):
+                    # plugin.publish("")
+                    print(d + ';' + entry[0].replace('_', ';') + ';' + str(entry[1]) + '\n')
 
 if __name__ == '__main__':
 

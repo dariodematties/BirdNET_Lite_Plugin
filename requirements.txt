@@ -1,0 +1,2 @@
+pywaggle[all]==0.52.0
+git+https://github.com/sagecontinuum/sage-cli.git
