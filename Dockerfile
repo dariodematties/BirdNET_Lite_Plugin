@@ -18,7 +18,9 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 ARG SAGE_STORE_URL="https://osn.sagecontinuum.org" \
     BUCKET_ID_MODEL="cafb2b6a-8e1d-47c0-841f-3cad27737698"
 
-ENV SAGE_STORE_URL=${SAGE_STORE_URL} \
+ENV LC_ALL="C.UTF-8" \
+    LANG="C.UTF-8" \
+    SAGE_STORE_URL=${SAGE_STORE_URL} \
     BUCKET_ID_MODEL=${BUCKET_ID_MODEL}
 
 RUN sage-cli.py storage files download ${BUCKET_ID_MODEL} \
