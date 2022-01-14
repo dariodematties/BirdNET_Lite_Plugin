@@ -242,7 +242,7 @@ def main():
             # Process audio data and get detections
             week = max(1, min(args.week, 48))
             sensitivity = max(0.5, min(1.0 - (args.sensitivity - 1.0), 1.5))
-            detections = analyzeAudioData(sample.data, args.lat, args.lon, week, sensitivity, args.overlap, interpreter)
+            detections = analyzeAudioData(sample.data.T, args.lat, args.lon, week, sensitivity, args.overlap, interpreter)
 
         # Write detections to output file
         min_conf = max(0.01, min(args.min_conf, 0.99))
