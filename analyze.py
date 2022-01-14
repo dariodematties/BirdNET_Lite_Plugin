@@ -252,8 +252,8 @@ def main():
                     class_label = entry[0].split('_')
                     scientific_name = class_label.lower().replace(' ', '_')
                     common_name = class_label.lower().replace(' ', '_')
-                    plugin.publish(f'env.detection.avien.{scientific_name}', entry[1], timestamp=sample.timestamp, meta={'record_duration': 3})
-                    plugin.publish(f'env.detection.avien.{common_name}', entry[1], timestamp=sample.timestamp, meta={'record_duration': 3})
+                    plugin.publish(f'env.detection.avian.{scientific_name}', entry[1], timestamp=sample.timestamp, meta={'record_duration': 3})
+                    plugin.publish(f'env.detection.avian.{common_name}', entry[1], timestamp=sample.timestamp, meta={'record_duration': 3})
                     print(d + ';' + entry[0].replace('_', ';') + ';' + str(entry[1]) + '\n')
 
 if __name__ == '__main__':
