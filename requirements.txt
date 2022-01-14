@@ -1,2 +1,4 @@
-#pywaggle[all]==0.52.0.post2
+pywaggle[all]==0.52.0.post2
 git+https://github.com/sagecontinuum/sage-cli.git
+# nvcr.io/nvidia/l4t-tensorflow:r32.4.4-tf2.3-py3 has TF2 compatible with numpy <= 1.19.0
+numpy==1.19.0
