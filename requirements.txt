@@ -1,2 +1,2 @@
-pywaggle[all]==0.52.0.post2
+#pywaggle[all]==0.52.0.post2
 git+https://github.com/sagecontinuum/sage-cli.git
