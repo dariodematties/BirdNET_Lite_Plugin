@@ -220,7 +220,7 @@ def main():
     args = parser.parse_args()
 
     with Plugin() as plugin, Microphone() as microphone:
-        with Plugin.timeit("plugin.duration.loadmodel"):
+        with plugin.timeit("plugin.duration.loadmodel"):
             # Load model
             interpreter = loadModel()
 
@@ -230,12 +230,14 @@ def main():
             else:
                 WHITE_LIST = []
 
-        with Plugin.timeit("plugin.duration.input"):
+        record_duration = 3
+        with plugin.timeit("plugin.duration.input"):
             # Read audio data
             # audioData = readAudioData(args.i, args.overlap)
-            sample = microphone.record(5)
+            # the model expects 3 second audio recorded at 48 KHz
+            sample = microphone.record(record_duration, samplerate=48000)
 
-        with Plugin.timeit("plugin.duration.inference"):
+        with plugin.timeit("plugin.duration.inference"):
             # Process audio data and get detections
             week = max(1, min(args.week, 48))
             sensitivity = max(0.5, min(1.0 - (args.sensitivity - 1.0), 1.5))
@@ -247,7 +249,11 @@ def main():
         for d in detections:
             for entry in detections[d]:
                 if entry[1] >= min_conf and (entry[0] in WHITE_LIST or len(WHITE_LIST) == 0):
-                    # plugin.publish("")
+                    class_label = entry[0].split('_')
+                    scientific_name = class_label.lower().replace(' ', '_')
+                    common_name = class_label.lower().replace(' ', '_')
+                    plugin.publish(f'env.detection.avien.{scientific_name}', entry[1], timestamp=sample.timestamp, meta={'record_duration': 3})
+                    plugin.publish(f'env.detection.avien.{common_name}', entry[1], timestamp=sample.timestamp, meta={'record_duration': 3})
                     print(d + ';' + entry[0].replace('_', ';') + ';' + str(entry[1]) + '\n')
 
 if __name__ == '__main__':
