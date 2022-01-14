@@ -1,0 +1,13 @@
+name: "avian-diversity-monitoring"
+description: "Testing 1, 2, 3..."
+version : "0.2.0"
+namespace: "theone"
+authors: 
+license: 
+homepage: "https://github.com/dariodematties/BirdNET_Lite_Plugin"
+keywords: 
+funding: 
+collaborators: 
+source:
+  architectures:
+    - linux/arm64
