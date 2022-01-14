@@ -219,7 +219,8 @@ def main():
 
     args = parser.parse_args()
 
-    with Plugin() as plugin, Microphone() as microphone:
+    with Plugin() as plugin:
+        microphone = Microphone()
         with plugin.timeit("plugin.duration.loadmodel"):
             # Load model
             interpreter = loadModel()
