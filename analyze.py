@@ -220,7 +220,8 @@ def main():
     args = parser.parse_args()
 
     with Plugin() as plugin:
-        microphone = Microphone()
+        # the model expects 3 second audio recorded at 48 KHz
+        microphone = Microphone(samplerate=48000)
         with plugin.timeit("plugin.duration.loadmodel"):
             # Load model
             interpreter = loadModel()
@@ -235,8 +236,7 @@ def main():
         with plugin.timeit("plugin.duration.input"):
             # Read audio data
             # audioData = readAudioData(args.i, args.overlap)
-            # the model expects 3 second audio recorded at 48 KHz
-            sample = microphone.record(record_duration, samplerate=48000)
+            sample = microphone.record(record_duration)
 
         with plugin.timeit("plugin.duration.inference"):
             # Process audio data and get detections
