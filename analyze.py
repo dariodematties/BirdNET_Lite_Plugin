@@ -88,7 +88,9 @@ def readAudioData(path, overlap, sample_rate=48000):
     # Open file with librosa (uses ffmpeg or libav)
     # sig, rate = librosa.load(path, sr=sample_rate, mono=True, res_type='kaiser_fast')
     old_rate, old_sig = wavfile.read(path)
-    old_sig = old_sig[:,0]
+    if len(old_sig.shape) == 2:
+        old_sig = old_sig[:,0]
+
     if old_rate != sample_rate:
         duration = old_sig.shape[0] / old_rate
         
