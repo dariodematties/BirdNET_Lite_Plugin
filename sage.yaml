@@ -1,5 +1,5 @@
 name: "avian-diversity-monitoring"
-description: "Testing 1, 2, 3..."
+description: "Records environmental sounds, identifies birds by such sounds and finally publishes the results"
 version : "0.2.0"
 namespace: "theone"
 authors: 
