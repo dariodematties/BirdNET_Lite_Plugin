@@ -258,15 +258,15 @@ def publishDatections(plugin, allDetections, timeStamps, args, min_conf, WHITE_L
                 start_time = times[0]
                 end_time = times[1]
                 for entry in detections[d]:
-                    #if entry[1] >= min_conf and (entry[0] in WHITE_LIST or len(WHITE_LIST) == 0):
-                    class_label = entry[0].split('_')
-                    scientific_name = class_label[0].lower().replace(' ', '_')
-                    common_name = class_label[1].lower()
-                    common_name = ''.join(e for e in common_name if e.isalnum())
-                    plugin.publish(f'env.detection.avian.{start_time}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
-                    plugin.publish(f'env.detection.avian.{end_time}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
-                    plugin.publish(f'env.detection.avian.{scientific_name}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
-                    plugin.publish(f'env.detection.avian.{common_name}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
+                    if entry[1] >= min_conf and (entry[0] in WHITE_LIST or len(WHITE_LIST) == 0):
+                        class_label = entry[0].split('_')
+                        scientific_name = class_label[0].lower().replace(' ', '_')
+                        common_name = class_label[1].lower()
+                        common_name = ''.join(e for e in common_name if e.isalnum())
+                        plugin.publish(f'env.detection.avian.{start_time}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
+                        plugin.publish(f'env.detection.avian.{end_time}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
+                        plugin.publish(f'env.detection.avian.{scientific_name}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
+                        plugin.publish(f'env.detection.avian.{common_name}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
 
 
 def main():
@@ -341,5 +341,6 @@ if __name__ == '__main__':
     main()
 
     # Example calls
-    # python3 analyze.py --i 'example/XC558716 - Soundscape.mp3' --lat 35.4244 --lon -120.7463 --week 18
-    # python3 analyze.py --i 'example/XC563936 - Soundscape.mp3' --lat 47.6766 --lon -122.294 --week 11 --overlap 1.5 --min_conf 0.25 --sensitivity 1.25 --custom_list 'example/custom_species_list.txt'
+    # The following will produce 6 recording of 5 seconds each at 1 second silent intervals
+    # python3 analyze.py --num_rec 6 --sound_int 5 --lat 35.4244 --lon -120.7463 --week 18
+    # python3 analyze.py --num_rec 6 --sound_int 5 --lat 47.6766 --lon -122.294 --week 11 --overlap 1.5 --min_conf 0.25 --sensitivity 1.25 --custom_list 'example/custom_species_list.txt'
