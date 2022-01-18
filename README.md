@@ -1,102 +1,97 @@
 [![CC BY-NC-SA 4.0][cc-by-nc-sa-shield]][cc-by-nc-sa]
 
-# BirdNET-Lite
-TFLite version of BirdNET. Bird sound recognition for more than 6,000 species worldwide.
+# BirdNET_Plugin for avian diversity monitoring on the edge
+The original [BirdNET](https://github.com/kahst/BirdNET) repository with the model for identification of birds by sounds is completely developed by [Stefan Kahl](https://github.com/kahst), [Shyam Madhusudhana](https://www.birds.cornell.edu/brp/shyam-madhusudhana/), and [Holger Klinck](https://www.birds.cornell.edu/brp/holger-klinck/).
 
-This work is licensed under a
-[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License][cc-by-nc-sa].
+This repository is a clone of the [original one](https://github.com/kahst/BirdNET) with the necessary modifications added in order to make it work as a plugin on the nodes of the the [Sage project](https://sagecontinuum.org/).
 
-K. Lisa Yang Center for Conservation Bioacoustics, Cornell Lab of Ornithology, Cornell University
-
-Go to https://birdnet.cornell.edu to learn more about the project.
-
-Want to use BirdNET to analyze a large dataset? Don't hesitate to contact us: ccb-birdnet@cornell.edu
+Basically I have incorporated the [pywaggle](https://github.com/waggle-sensor/pywaggle) functionality which allows to collect sounds from microphones as inputs for the model which identifies the birds that might have produced such sounds. Afterwards I use pywaggle to publish the model results as well as performance measures.
 
 [cc-by-nc-sa]: http://creativecommons.org/licenses/by-nc-sa/4.0/
 [cc-by-nc-sa-shield]: https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg
 
-# Setup (Ubuntu 18.04)
+## Usage
 
-TFLite for x86 platforms comes with the standard Tensorflow package. If you are on a different platform, you need to install a dedicated version of TFLite (e.g., a pre-compiled version for Raspberry Pi).
+Please, reffer to the [pywaggle](https://github.com/waggle-sensor/pywaggle) and [BirdNET-Lite](https://github.com/kahst/BirdNET-Lite) repositories to instal the necessary dependences.
 
-We need to setup TF2.3+ for BirdNET. First, we install Python 3 and pip:
+For usage just clone this repository
 
-```
-sudo apt-get update
-sudo apt-get install python3-dev python3-pip
-sudo pip3 install --upgrade pip
-```
+`https://github.com/dariodematties/BirdNET_Lite_Plugin`
 
-Then, we can install Tensorflow with:
+Then
 
-```
-sudo pip3 install tensorflow
-```
+`cd BirdNET_Lite_Plugin`
 
-TFLite on x86 platform currently only supports CPUs. 
+and run
 
-Note: Make sure to set `CUDA_VISIBLE_DEVICES=""` in your environment variables. Or set `os.environ['CUDA_VISIBLE_DEVICES'] = ''` at the top of your Python script.
+`python3 analyze.py --num_rec 6 --sound_int 5`
 
-In this example, we use Librosa to open audio files. Install Librosa with:
+which will record 6 audio files of 10 seconds each, analyze them, publish the results and inference times of each file and finally remove the recorded input files.
 
 ```
-sudo pip3 install librosa
-sudo apt-get install ffmpeg
+LOADING TF LITE MODEL... DONE!
+IN THIS RUN  6  FILES OF  5.0  SECONDS WILL BE PROCESSED
+RECORDING NUMBER:  0
+RECORDING AUDIO FROM MIC DURING:  5.0  SECONDS...  DONE!
+RECORDING NUMBER:  1
+RECORDING AUDIO FROM MIC DURING:  5.0  SECONDS...  DONE!
+RECORDING NUMBER:  2
+RECORDING AUDIO FROM MIC DURING:  5.0  SECONDS...  DONE!
+RECORDING NUMBER:  3
+RECORDING AUDIO FROM MIC DURING:  5.0  SECONDS...  DONE!
+RECORDING NUMBER:  4
+RECORDING AUDIO FROM MIC DURING:  5.0  SECONDS...  DONE!
+RECORDING NUMBER:  5
+RECORDING AUDIO FROM MIC DURING:  5.0  SECONDS...  DONE!
+FILES IN DATASET: 6
+READING AUDIO DATA... DONE! READ 2 CHUNKS.
+READING AUDIO DATA... DONE! READ 2 CHUNKS.
+READING AUDIO DATA... DONE! READ 2 CHUNKS.
+READING AUDIO DATA... DONE! READ 2 CHUNKS.
+READING AUDIO DATA... DONE! READ 2 CHUNKS.
+READING AUDIO DATA... DONE! READ 2 CHUNKS.
+ANALYZING AUDIO... DONE! Time 0.3 SECONDS
+ANALYZING AUDIO... DONE! Time 0.2 SECONDS
+ANALYZING AUDIO... DONE! Time 0.2 SECONDS
+ANALYZING AUDIO... DONE! Time 0.2 SECONDS
+ANALYZING AUDIO... DONE! Time 0.2 SECONDS
+ANALYZING AUDIO... DONE! Time 0.2 SECONDS
+PUBLISHING DETECTION 0 ... DONE!
+PUBLISHING DETECTION 1 ... DONE!
+PUBLISHING DETECTION 2 ... DONE!
+PUBLISHING DETECTION 3 ... DONE!
+PUBLISHING DETECTION 4 ... DONE!
+PUBLISHING DETECTION 5 ... DONE!
+REMOVING THE INPUT COLLECTED BY THE MICROPHONE ... DONE!
 ```
 
-You can use any other audio lib if you like, or pass raw audio signals to the model.
+Beyond publishing, if you want to save the outputs of the model in files, first create a folder in the directory of the project; let's say
 
-If you don't use Librosa, make sure to install NumPy:
+`mkdir output`
 
+Then, run the following command
+
+`python3 analyze.py --num_rec 6 --sound_int 5 --o output --min_conf 0.01`
+
+This will instruct the script to save the results of the analysis of the different recordings in the directory `output`
+
+The format of the output is 
 ```
-sudo pip3 install numpy
-```
-
-Note: BirdNET expects 3-second chunks of raw audio data, sampled at 48 kHz.
-
-# Usage
-
-You can run BirdNET via the command line. You can add a few parameters that affect the output.
-
-The input parameters include:
-
-```
---i, Path to input file.
---o, Path to output file. Defaults to result.csv.
---lat, Recording location latitude. Set -1 to ignore.
---lon, Recording location longitude. Set -1 to ignore.
---week, Week of the year when the recording was made. Values in [1, 48] (4 weeks per month). Set -1 to ignore.
---overlap, Overlap in seconds between extracted spectrograms. Values in [0.0, 2.9]. Defaults tp 0.0.
---sensitivity, Detection sensitivity; Higher values result in higher sensitivity. Values in [0.5, 1.5]. Defaults to 1.0.
---min_conf, Minimum confidence threshold. Values in [0.01, 0.99]. Defaults to 0.1.
---custom_list, Path to text file containing a list of species. Not used if not provided.
-```
-
-Note: A custom species list needs to contain one species label per line. Take a look at the `model/label.txt` for the correct species label. Only labels from this text file are valid. You can find an example of a valid custom list in the 'example' folder.
-
-Here are two example commands to run this BirdNET version:
-
+tart (s);End (s);Scientific name;Common name;Confidence
+0.0;3.0;Dicrurus paradiseus;Greater Racket-tailed Drongo;0.025848534
+0.0;3.0;Capito wallacei;Scarlet-banded Barbet;0.019484155
+0.0;3.0;Dendrocopos leucotos;White-backed Woodpecker;0.013595802
+0.0;3.0;Myophonus horsfieldii;Malabar Whistling-Thrush;0.012276235
+0.0;3.0;Grallaria flavotincta;Yellow-breasted Antpitta;0.01151198
+0.0;3.0;Formicarius rufipectus;Rufous-breasted Antthrush;0.011332592
+3.0;6.0;Capito wallacei;Scarlet-banded Barbet;0.058079723
+3.0;6.0;Saltator grossus;Slate-colored Grosbeak;0.03138132
+3.0;6.0;Sylvia abyssinica;African Hill Babbler;0.023456778
+3.0;6.0;Copsychus luzoniensis;White-browed Shama;0.02323199
+3.0;6.0;Hypsipetes everetti;Yellowish Bulbul;0.022299841
+3.0;6.0;Sylvia atriceps;Rwenzori Hill Babbler;0.016690737
+3.0;6.0;Copsychus malabaricus;White-rumped Shama;0.016142305
+3.0;6.0;Saltator fuliginosus;Black-throated Grosbeak;0.0121659925
 ```
 
-python3 analyze.py --i 'example/XC558716 - Soundscape.mp3' --lat 35.4244 --lon -120.7463 --week 18
-
-python3 analyze.py --i 'example/XC563936 - Soundscape.mp3' --lat 47.6766 --lon -122.294 --week 11 --overlap 1.5 --min_conf 0.25 --sensitivity 1.25 --custom_list 'example/custom_species_list.txt'
-
-```
-
-Note: Please make sure to provide lat, lon, and week. BirdNET will work without these values, but the results might be less reliable.
-
-The results of the anlysis will be stored in a result file in CSV format. All confidence values are raw prediction scores and should be post-processed to eliminate occasional false-positive results.
-
-# Contact us
-
-Please don't hesitate to contact us if you have any issues with the code or if you have any other remarks or questions.
-
-Our e-mail address: ccb-birdnet@cornell.edu
-
-We are always open for a collaboration with you.
-
-# Funding
-
-This project is supported by Jake Holshuh (Cornell class of ’69). The Arthur Vining Davis Foundations also kindly support our efforts.
 

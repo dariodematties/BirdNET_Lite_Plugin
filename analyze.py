@@ -255,7 +255,8 @@ def writeResultsToFile(allDetections, min_conf, path):
         print("Unexpected output path: {}, it must be an existing directory" .format(path))
 
 def publishDatections(plugin, allDetections, timeStamps, args, min_conf, WHITE_LIST):
-        for detections, timestamp in zip(allDetections, timeStamps):
+        for i, (detections, timestamp) in enumerate(zip(allDetections, timeStamps)):
+            print('PUBLISHING DETECTION', i, '...', end=' ')
             for d in detections:
                 times = d.split(';')
                 start_time = times[0]
@@ -271,6 +272,8 @@ def publishDatections(plugin, allDetections, timeStamps, args, min_conf, WHITE_L
                         plugin.publish(f'env.detection.avian.{scientific_name}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
                         plugin.publish(f'env.detection.avian.{common_name}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
 
+            print('DONE!')
+
 
 def main():
 
@@ -283,7 +286,7 @@ def main():
     parser.add_argument('--silence_int', type=float, default=1.0, help='Time interval [s] in which there is not sound recording. Default to 1.0.')
     parser.add_argument('--sound_int', type=float, default=10.0, help='Time interval [s] in which there is sound recording. Default to 10.0.')
 
-    parser.add_argument('--i', help='Path to input file.')
+    parser.add_argument('--i', help='Path to input file. If not specified, the plugin will record from the microphone')
     parser.add_argument('--o', default='', help='Path to output file. Defaults to None.')
     parser.add_argument('--filetype', default='wav', help='Filetype of soundscape recordings. Defaults to \'wav\'.')
     parser.add_argument('--lat', type=float, default=-1, help='Recording location latitude. Set -1 to ignore.')
