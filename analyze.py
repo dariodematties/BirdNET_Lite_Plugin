@@ -238,18 +238,21 @@ def analyzeAudioData(chunks, lat, lon, week, sensitivity, overlap, interpreter):
 
     return detections
 
-def writeResultsToFile(detections, min_conf, path):
-
-    print('WRITING RESULTS TO', path, '...', end=' ')
-    rcnt = 0
-    with open(path, 'w') as rfile:
-        rfile.write('Start (s);End (s);Scientific name;Common name;Confidence\n')
-        for d in detections:
-            for entry in detections[d]:
-                if entry[1] >= min_conf and (entry[0] in WHITE_LIST or len(WHITE_LIST) == 0):
-                    rfile.write(d + ';' + entry[0].replace('_', ';') + ';' + str(entry[1]) + '\n')
-                    rcnt += 1
-    print('DONE! WROTE', rcnt, 'RESULTS.')
+def writeResultsToFile(allDetections, min_conf, path):
+    if os.path.isdir(path):
+        for dets_n, detections in enumerate(allDetections):
+            print('WRITING RESULTS TO', path, '...', end=' ')
+            rcnt = 0
+            with open(path + '/result_' + str(dets_n) + '.csv', 'w') as rfile:
+                rfile.write('Start (s);End (s);Scientific name;Common name;Confidence\n')
+                for d in detections:
+                    for entry in detections[d]:
+                        if entry[1] >= min_conf and (entry[0] in WHITE_LIST or len(WHITE_LIST) == 0):
+                            rfile.write(d + ';' + entry[0].replace('_', ';') + ';' + str(entry[1]) + '\n')
+                            rcnt += 1
+            print('DETECTIONS', dets_n, 'DONE! WROTE', rcnt, 'RESULTS.')
+    else:
+        print("Unexpected output path: {}, it must be an existing directory" .format(path))
 
 def publishDatections(plugin, allDetections, timeStamps, args, min_conf, WHITE_LIST):
         for detections, timestamp in zip(allDetections, timeStamps):
@@ -281,7 +284,7 @@ def main():
     parser.add_argument('--sound_int', type=float, default=10.0, help='Time interval [s] in which there is sound recording. Default to 10.0.')
 
     parser.add_argument('--i', help='Path to input file.')
-    parser.add_argument('--o', default='result.csv', help='Path to output file. Defaults to result.csv.')
+    parser.add_argument('--o', default='', help='Path to output file. Defaults to None.')
     parser.add_argument('--filetype', default='wav', help='Filetype of soundscape recordings. Defaults to \'wav\'.')
     parser.add_argument('--lat', type=float, default=-1, help='Recording location latitude. Set -1 to ignore.')
     parser.add_argument('--lon', type=float, default=-1, help='Recording location longitude. Set -1 to ignore.')
@@ -326,7 +329,8 @@ def main():
 
         # Write detections to output file
         min_conf = max(0.01, min(args.min_conf, 0.99))
-        # writeResultsToFile(detections, min_conf, args.o)
+        if args.o:
+            writeResultsToFile(allDetections, min_conf, args.o)
 
         # Publish detections
         publishDatections(plugin, allDetections, timeStamps, args, min_conf, WHITE_LIST)
