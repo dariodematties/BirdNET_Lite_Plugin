@@ -17,9 +17,57 @@ from scipy import interpolate
 import numpy as np
 import math
 import time
+import shutil
 
 from waggle.plugin import Plugin
 from waggle.data.audio import Microphone
+
+from time import sleep
+
+def readAudioDataset(args):
+    # Parse dataset
+    dataset = parseTestSet(args.i, args.filetype)
+
+    # Read audio data
+    audioData = []
+    timeStamps = []
+    for s in dataset:
+        audioData.append(readAudioData(s, args.overlap))
+        #audioData = readAudioData(args.i, args.overlap)
+        timeStamps.append(os.path.getmtime(s))
+
+    return audioData, timeStamps
+
+def parseTestSet(path, file_type='wav'):
+
+    # Find all soundscape files
+    dataset = []
+    if os.path.isfile(path):
+        dataset.append(path)
+    else:
+        for dirpath, _, filenames in os.walk(path):
+            for f in filenames:
+                if f.rsplit('.', 1)[-1].lower() == file_type:
+                    dataset.append(os.path.abspath(os.path.join(dirpath, f)))
+
+    # Dataset stats
+    print('FILES IN DATASET:', len(dataset))
+    
+    return dataset
+
+def audioRecording(path, number_of_recordings, silence_interval, sound_interval, file_type='wav'):
+
+    print('IN THIS RUN ', number_of_recordings, ' FILES OF ', sound_interval, ' SECONDS WILL BE PROCESSED')
+    microphone = Microphone(samplerate=48000)
+    for i in range(number_of_recordings):
+        # Recording audio
+        print('RECORDING NUMBER: ', i)
+        print('RECORDING AUDIO FROM MIC DURING: ', sound_interval, ' SECONDS... ', end=' ')
+        sample = microphone.record(sound_interval)
+        filename = "sample_" + str(i) + "." + file_type
+        sample.save(os.path.abspath(os.path.join(path, filename)))
+        print('DONE!')
+        sleep(silence_interval)
 
 def loadModel():
 
@@ -203,14 +251,38 @@ def writeResultsToFile(detections, min_conf, path):
                     rcnt += 1
     print('DONE! WROTE', rcnt, 'RESULTS.')
 
+def publishDatections(plugin, allDetections, timeStamps, args, min_conf, WHITE_LIST):
+        for detections, timestamp in zip(allDetections, timeStamps):
+            for d in detections:
+                times = d.split(';')
+                start_time = times[0]
+                end_time = times[1]
+                for entry in detections[d]:
+                    #if entry[1] >= min_conf and (entry[0] in WHITE_LIST or len(WHITE_LIST) == 0):
+                    class_label = entry[0].split('_')
+                    scientific_name = class_label[0].lower().replace(' ', '_')
+                    common_name = class_label[1].lower()
+                    common_name = ''.join(e for e in common_name if e.isalnum())
+                    plugin.publish(f'env.detection.avian.{start_time}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
+                    plugin.publish(f'env.detection.avian.{end_time}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
+                    plugin.publish(f'env.detection.avian.{scientific_name}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
+                    plugin.publish(f'env.detection.avian.{common_name}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
+
+
 def main():
 
     global WHITE_LIST
 
     # Parse passed arguments
     parser = argparse.ArgumentParser()
+
+    parser.add_argument('--num_rec', type=int, default=1, help='Number of microphone recordings. Each mic recording will be saved in a different file. Default to 1.')
+    parser.add_argument('--silence_int', type=float, default=1.0, help='Time interval [s] in which there is not sound recording. Default to 1.0.')
+    parser.add_argument('--sound_int', type=float, default=10.0, help='Time interval [s] in which there is sound recording. Default to 10.0.')
+
     parser.add_argument('--i', help='Path to input file.')
     parser.add_argument('--o', default='result.csv', help='Path to output file. Defaults to result.csv.')
+    parser.add_argument('--filetype', default='wav', help='Filetype of soundscape recordings. Defaults to \'wav\'.')
     parser.add_argument('--lat', type=float, default=-1, help='Recording location latitude. Set -1 to ignore.')
     parser.add_argument('--lon', type=float, default=-1, help='Recording location longitude. Set -1 to ignore.')
     parser.add_argument('--week', type=int, default=-1, help='Week of the year when the recording was made. Values in [1, 48] (4 weeks per month). Set -1 to ignore.')
@@ -218,12 +290,11 @@ def main():
     parser.add_argument('--sensitivity', type=float, default=1.0, help='Detection sensitivity; Higher values result in higher sensitivity. Values in [0.5, 1.5]. Defaults to 1.0.')
     parser.add_argument('--min_conf', type=float, default=0.1, help='Minimum confidence threshold. Values in [0.01, 0.99]. Defaults to 0.1.')   
     parser.add_argument('--custom_list', default='', help='Path to text file containing a list of species. Not used if not provided.')
+    parser.add_argument('--keep', action='store_true', help='Keeps all the input files collected from the mic.')
 
     args = parser.parse_args()
 
     with Plugin() as plugin:
-        # the model expects 3 second audio recorded at 48 KHz
-        microphone = Microphone(samplerate=48000)
         with plugin.timeit("plugin.duration.loadmodel"):
             # Load model
             interpreter = loadModel()
@@ -234,30 +305,36 @@ def main():
             else:
                 WHITE_LIST = []
 
-        record_duration = 3
         with plugin.timeit("plugin.duration.input"):
-            # Read audio data
-            # audioData = readAudioData(args.i, args.overlap)
-            sample = microphone.record(record_duration)
+            if args.i == None:
+                # Record audio from microphone
+                dir_name = "mic_dir_" + str(time.time())
+                os.mkdir(dir_name)
+                args.i = dir_name
+                audioRecording(args.i, args.num_rec, args.silence_int, args.sound_int, args.filetype)
+
+            audioData, timeStamps = readAudioDataset(args)
 
         with plugin.timeit("plugin.duration.inference"):
             # Process audio data and get detections
             week = max(1, min(args.week, 48))
             sensitivity = max(0.5, min(1.0 - (args.sensitivity - 1.0), 1.5))
-            detections = analyzeAudioData(sample.data.T, args.lat, args.lon, week, sensitivity, args.overlap, interpreter)
+            
+            allDetections = []
+            for data in audioData:
+                allDetections.append(analyzeAudioData(data, args.lat, args.lon, week, sensitivity, args.overlap, interpreter))
 
         # Write detections to output file
         min_conf = max(0.01, min(args.min_conf, 0.99))
         # writeResultsToFile(detections, min_conf, args.o)
-        for d in detections:
-            for entry in detections[d]:
-                if entry[1] >= min_conf and (entry[0] in WHITE_LIST or len(WHITE_LIST) == 0):
-                    class_label = entry[0].split('_')
-                    scientific_name = class_label.lower().replace(' ', '_')
-                    common_name = class_label.lower().replace(' ', '_')
-                    plugin.publish(f'env.detection.avian.{scientific_name}', entry[1], timestamp=sample.timestamp, meta={'record_duration': 3})
-                    plugin.publish(f'env.detection.avian.{common_name}', entry[1], timestamp=sample.timestamp, meta={'record_duration': 3})
-                    print(d + ';' + entry[0].replace('_', ';') + ';' + str(entry[1]) + '\n')
+
+        # Publish detections
+        publishDatections(plugin, allDetections, timeStamps, args, min_conf, WHITE_LIST)
+
+        if not args.keep:
+            print('REMOVING THE INPUT COLLECTED BY THE MICROPHONE ...', end=' ')
+            shutil.rmtree(dir_name)
+            print('DONE!')
 
 if __name__ == '__main__':
 
