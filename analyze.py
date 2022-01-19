@@ -300,6 +300,8 @@ def main():
 
     args = parser.parse_args()
 
+    enable_rm = False
+
     with Plugin() as plugin:
         with plugin.timeit("plugin.duration.loadmodel"):
             # Load model
@@ -318,6 +320,7 @@ def main():
                 os.mkdir(dir_name)
                 args.i = dir_name
                 audioRecording(args.i, args.num_rec, args.silence_int, args.sound_int, args.filetype)
+                enable_rm = True
 
             audioData, timeStamps = readAudioDataset(args)
 
@@ -338,7 +341,7 @@ def main():
         # Publish detections
         publishDatections(plugin, allDetections, timeStamps, args, min_conf, WHITE_LIST)
 
-        if not args.keep:
+        if not args.keep and enable_rm:
             print('REMOVING THE INPUT COLLECTED BY THE MICROPHONE ...', end=' ')
             shutil.rmtree(dir_name)
             print('DONE!')
