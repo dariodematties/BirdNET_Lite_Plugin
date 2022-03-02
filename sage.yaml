@@ -1,13 +1,15 @@
 name: "avian-diversity-monitoring"
 description: "Records environmental sounds, identifies birds by such sounds and finally publishes the results"
 version : "0.2.0"
-namespace: "theone"
-authors: 
-license: 
+namespace: "sage"
+authors: "Dario Dematties <ddematties@anl.gov>" 
+collaborators: "Bhupendra Raut, Dario Dematties Reyes, Joseph Swantek, Neal Conrad, Nicola Ferrier, Pete Beckman, Raj Sankaran, Robert Jackson, Scott Collis, Sean Shahkarami, Seongha Park, Sergey Shemyakin, Wolfgang Gerlach, Yongho kim"
+license: "Creative commons license" 
 homepage: "https://github.com/dariodematties/BirdNET_Lite_Plugin"
-keywords: 
-funding: 
-collaborators: 
+keywords: "microhpone, birdsong, birds classification, avian diversity"
+funding: "Argonne Laboratory Directed Research and Development, NSF 1935984"
 source:
   architectures:
     - linux/arm64
+  url: "https://github.com/dariodematties/BirdNET_Lite_Plugin.git"
+  branch: "main"
