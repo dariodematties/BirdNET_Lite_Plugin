@@ -135,20 +135,40 @@ This plugin has the following knobs
    
    **--keep**         'Keeps all the input files collected from the mic. Default is false'
 
-# Plugin outputs
+# Ontology
 
 The Output of the plugin is a text file
 
-  * **Begin Time (s):** Time mark to which the detection begins.
+  * **Begin Time (s):** Time mark to which the detection begins. (env.detection.avian.{start\_time})
 
-  * **End Time (s):** Time mark to which the detection ends.
+  * **End Time (s):** Time mark to which the detection ends. (env.detection.avian.{end\_time})
 
-  * **Scientific Name:** Name given to the species by scientists.
+  * **Scientific Name:** Name given to the species by scientists. (env.detection.avian.{scientific\_name})
 
-  * **Common Name:** Colloquial name given to the species.
+  * **Common Name:** Colloquial name given to the species. (env.detection.avian.{common\_name})
 
   * **Confidence:** Classification confidence level (from 0.0 to 1.0).
 
+The outputs of the plugin will be published by
+
+# Inference from Sage codes
+
+To query the output from the plugin, you can do with python library 'sage\_data\_client':
+
+```
+import sage_data_client
+
+# query and load data into pandas data frame
+df = sage_data_client.query(
+    start="-1h",
+    filter={
+        "name": "env.detection.avian.{common_name}",
+    }
+)
+
+# print results in data frame
+print(df)
+```
 
 # References
 
