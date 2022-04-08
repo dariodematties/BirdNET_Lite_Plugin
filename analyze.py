@@ -339,7 +339,29 @@ def main():
             writeResultsToFile(allDetections, min_conf, args.o)
 
         # Publish detections
-        publishDatections(plugin, allDetections, timeStamps, args, min_conf, WHITE_LIST)
+        #publishDatections(plugin, allDetections, timeStamps, args, min_conf, WHITE_LIST)
+
+        with plugin.timeit("plugin.duration.publication"):
+            # Process audio data and get detections
+            for i, (detections, timestamp) in enumerate(zip(allDetections, timeStamps)):
+                print('PUBLISHING DETECTION', i, '...', end=' ')
+                for d in detections:
+                    times = d.split(';')
+                    start_time = times[0]
+                    end_time = times[1]
+                    for entry in detections[d]:
+                        if entry[1] >= min_conf and (entry[0] in WHITE_LIST or len(WHITE_LIST) == 0):
+                            class_label = entry[0].split('_')
+                            scientific_name = class_label[0].lower().replace(' ', '_')
+                            common_name = class_label[1].lower()
+                            common_name = ''.join(e for e in common_name if e.isalnum())
+                            plugin.publish(f'env.detection.avian.{start_time}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
+                            plugin.publish(f'env.detection.avian.{end_time}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
+                            plugin.publish(f'env.detection.avian.{scientific_name}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
+                            plugin.publish(f'env.detection.avian.{common_name}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
+
+                print('DONE!')
+
 
         if not args.keep and enable_rm:
             print('REMOVING THE INPUT COLLECTED BY THE MICROPHONE ...', end=' ')
