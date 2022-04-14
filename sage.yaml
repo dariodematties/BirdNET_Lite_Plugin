@@ -1,6 +1,6 @@
 name: "avian-diversity-monitoring"
 description: "Records environmental sounds, identifies birds by such sounds and finally publishes the results"
-version : "0.2.0"
+version : "0.2.1"
 namespace: "sage"
 authors: "Dario Dematties <ddematties@anl.gov>" 
 collaborators: "Bhupendra Raut, Dario Dematties Reyes, Joseph Swantek, Neal Conrad, Nicola Ferrier, Pete Beckman, Raj Sankaran, Robert Jackson, Scott Collis, Sean Shahkarami, Seongha Park, Sergey Shemyakin, Wolfgang Gerlach, Yongho kim"
