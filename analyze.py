@@ -23,7 +23,9 @@ from waggle.plugin import Plugin
 from waggle.data.audio import Microphone
 
 from time import sleep
+import logging
 
+logging.basicConfig(level=logging.DEBUG)
 def readAudioDataset(args):
     # Parse dataset
     dataset = parseTestSet(args.i, args.filetype)
@@ -34,7 +36,7 @@ def readAudioDataset(args):
     for s in dataset:
         audioData.append(readAudioData(s, args.overlap))
         #audioData = readAudioData(args.i, args.overlap)
-        timeStamps.append(os.path.getmtime(s))
+        timeStamps.append(int(os.path.getmtime(s) * 1e9))
 
     return audioData, timeStamps
 
@@ -255,24 +257,24 @@ def writeResultsToFile(allDetections, min_conf, path):
         print("Unexpected output path: {}, it must be an existing directory" .format(path))
 
 def publishDatections(plugin, allDetections, timeStamps, args, min_conf, WHITE_LIST):
-        for i, (detections, timestamp) in enumerate(zip(allDetections, timeStamps)):
-            print('PUBLISHING DETECTION', i, '...', end=' ')
-            for d in detections:
-                times = d.split(';')
-                start_time = times[0]
-                end_time = times[1]
-                for entry in detections[d]:
-                    if entry[1] >= min_conf and (entry[0] in WHITE_LIST or len(WHITE_LIST) == 0):
-                        class_label = entry[0].split('_')
-                        scientific_name = class_label[0].lower().replace(' ', '_')
-                        common_name = class_label[1].lower()
-                        common_name = ''.join(e for e in common_name if e.isalnum())
-                        plugin.publish(f'env.detection.avian.{start_time}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
-                        plugin.publish(f'env.detection.avian.{end_time}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
-                        plugin.publish(f'env.detection.avian.{scientific_name}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
-                        plugin.publish(f'env.detection.avian.{common_name}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
+    for i, (detections, timestamp) in enumerate(zip(allDetections, timeStamps)):
+        print('PUBLISHING DETECTION', i, '...', end=' ')
+        for d in detections:
+            times = d.split(';')
+            start_time = times[0]
+            end_time = times[1]
+            for entry in detections[d]:
+                if entry[1] >= min_conf and (entry[0] in WHITE_LIST or len(WHITE_LIST) == 0):
+                    class_label = entry[0].split('_')
+                    scientific_name = class_label[0].lower().replace(' ', '_')
+                    common_name = class_label[1].lower()
+                    common_name = ''.join(e for e in common_name if e.isalnum())
+                    plugin.publish(f'env.detection.avian.{start_time}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
+                    plugin.publish(f'env.detection.avian.{end_time}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
+                    plugin.publish(f'env.detection.avian.{scientific_name}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
+                    plugin.publish(f'env.detection.avian.{common_name}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
 
-            print('DONE!')
+        print('DONE!')
 
 
 def main():
@@ -339,28 +341,7 @@ def main():
             writeResultsToFile(allDetections, min_conf, args.o)
 
         # Publish detections
-        #publishDatections(plugin, allDetections, timeStamps, args, min_conf, WHITE_LIST)
-
-        with plugin.timeit("plugin.duration.publication"):
-            # Process audio data and get detections
-            for i, (detections, timestamp) in enumerate(zip(allDetections, timeStamps)):
-                print('PUBLISHING DETECTION', i, '...', end=' ')
-                for d in detections:
-                    times = d.split(';')
-                    start_time = times[0]
-                    end_time = times[1]
-                    for entry in detections[d]:
-                        if entry[1] >= min_conf and (entry[0] in WHITE_LIST or len(WHITE_LIST) == 0):
-                            class_label = entry[0].split('_')
-                            scientific_name = class_label[0].lower().replace(' ', '_')
-                            common_name = class_label[1].lower()
-                            common_name = ''.join(e for e in common_name if e.isalnum())
-                            plugin.publish(f'env.detection.avian.{start_time}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
-                            plugin.publish(f'env.detection.avian.{end_time}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
-                            plugin.publish(f'env.detection.avian.{scientific_name}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
-                            plugin.publish(f'env.detection.avian.{common_name}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
-
-                print('DONE!')
+        publishDatections(plugin, allDetections, timeStamps, args, min_conf, WHITE_LIST)
 
 
         if not args.keep and enable_rm:
