@@ -269,10 +269,10 @@ def publishDatections(plugin, allDetections, timeStamps, args, min_conf, WHITE_L
                     scientific_name = class_label[0].lower().replace(' ', '_')
                     common_name = class_label[1].lower()
                     common_name = ''.join(e for e in common_name if e.isalnum())
-                    plugin.publish(f'env.detection.avian.{start_time}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
-                    plugin.publish(f'env.detection.avian.{end_time}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
+                    #plugin.publish(f'env.detection.avian.{start_time}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
+                    #plugin.publish(f'env.detection.avian.{end_time}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
                     plugin.publish(f'env.detection.avian.{scientific_name}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
-                    plugin.publish(f'env.detection.avian.{common_name}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
+                    #plugin.publish(f'env.detection.avian.{common_name}', str(entry[1]), timestamp=timestamp, meta={'record_duration': args.sound_int})
 
         print('DONE!')
 
